@@ -12,24 +12,25 @@ class SynTensor:
         assert np.shape(Plist) == (n,n), 'Size of Plist must be (n,n)'
         for i in range(n):
             for j in range(i+1,n):
-                assert Plist[i][j] == np.transpose(Plist[j][i]) , 'pij should be the transpose of pji'
-
+                if (Plist[i][j] != np.transpose(Plist[j][i])).any():
+                    print(i,j)
+        Plist = np.transpose(Plist)
         self.n = n
-        self.mList = mlist
+        self.mList = mlist.copy()
         self.N = sum(mlist)
 
         # 构造索引序列,即前缀和
-        self.indBegin = mlist
+        self.indBegin = mlist.copy()
         s = 0
         for i in range(n):
-            self.indBegin[i] = mlist[0] if i==0 else self.indBegin[i-1]+mlist[i]
+            self.indBegin[i] = 0 if i==0 else self.indBegin[i-1]+mlist[i-1]
         self.indEnd = [ self.indBegin[i+1] if i!= n-1 else self.N for i in range(n)  ]
-
         # 处理Plist的型状，让他变成mi*mj的
         self.Plist = np.zeros((n,n),np.ndarray)
         for i in range(n):
             for j in range(n):
-                self.Plist[i][j] = np.array( Plist[0:mlist[j],0:mlist[i]] )
+                tmp = np.array(Plist[i][j])
+                self.Plist[i][j] = tmp[ 0:mlist[j],0:mlist[i] ]
 
         self.buildP()
         self.buildC()
@@ -38,10 +39,11 @@ class SynTensor:
 
 
     def buildP(self):
-        self.P = np.zeros([self.N,self.N],np.int)
+        self.P = np.zeros([self.N,self.N],np.double)
         n = self.n
         for i in range(n):
             for j in range(n):
+                print(i,j)
                 self.P[self.indBegin[j]:self.indEnd[j],self.indBegin[i]:self.indEnd[i]] = self.Plist[i][j]
 
 
@@ -67,7 +69,7 @@ class SynTensor:
         :param k:
         :return: 计算Rijk = P[i][j] * C[i][j][k]
         '''
-        return np.dot(self.Plist[i][j],self.C[i][j][k])
+        return np.dot(self.Plist[i][j],self.Clist[i][j][k])
 
     def buildR(self):
         '''
@@ -77,7 +79,7 @@ class SynTensor:
         '''
         n = self.n
         self.Rlist = np.zeros([n,n,n],np.ndarray)
-        self.R = np.zeros([self.N, self.N, n], np.float)
+        self.R = np.zeros([self.N, self.N, n], np.double)
         for i in range(n):
             for j in range(n):
                 for k in range(n):
@@ -91,7 +93,7 @@ class SynTensor:
         获取R中每个点都和哪个C相乘，方法是先把他们都设成全为1的数组，模拟一次与C相乘的结果就是与之相乘的Cijk
         :return:
         '''
-        self.Wrst = np.ones([self.N,self.N,self.n],np.float)
+        self.Wrst = np.ones([self.N,self.N,self.n],np.double)
         for i in range(self.n):
             for j in range(self.n):
                 for k in range(self.n): # 取出来一小片
@@ -102,7 +104,11 @@ class SynTensor:
 
     def solution(self):
 
+        self.build_Wrst()
         self.m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
+        self.Ax = np.array(self.Ax,np.double)
+        self.Bx = np.array(self.Ax, np.double)
+        self.Cx = np.array(self.Ax, np.double)
         while(True):
             tmp1, tmp2,tmp3 = self.Ax,self.Bx,self.Cx
             self.Ax = self.optA()
@@ -123,7 +129,7 @@ class SynTensor:
         a = A - self.Ax
         b = B - self.Bx
         c = C - self.Cx
-        return np.linalg.norm(a) + np.linalg.norm(b) + np.linalg(c)
+        return np.linalg.norm(a) + np.linalg.norm(b) + np.linalg.norm(c)
 
     def get_init(self):
 
@@ -147,10 +153,11 @@ class SynTensor:
 
         return m_bar, tmp, tmp, Ctmp
 
+    ### 注意这里用的是伪逆
     def optA(self):
 
         # 公式(17)
-        H = np.zeros([self.N,self.m_bar,self.m_bar],np.float)
+        H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
         for r in range(self.N):
             for i in range(self.m_bar):
                 for j in range(self.m_bar):
@@ -159,7 +166,7 @@ class SynTensor:
                             H[r][i][j] += self.Wrst[r][s][t]*self.Bx[s][i]*self.Bx[s][j]*self.Cx[t][i] * self.Cx[t][j]
 
 
-        g = np.zeros([self.N,self.m_bar],np.float)
+        g = np.zeros([self.N,self.m_bar],np.double)
 
         for r in range(self.N):
             for l in range(self.m_bar):
@@ -170,13 +177,13 @@ class SynTensor:
         ans = np.zeros([self.N,self.m_bar])
 
         for r in range(self.N):
-            ans[r] = np.linalg.inv(H[r]).dot(g[r])
+            ans[r] = np.linalg.pinv(H[r]).dot(g[r])
         return ans
 
     def optB(self):
 
         # 公式(19) ctrl c ctrl v 不规范，亲人两行泪
-        H = np.zeros([self.N,self.m_bar,self.m_bar],np.float)
+        H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
         for r in range(self.N):
             for i in range(self.m_bar):
                 for j in range(self.m_bar):
@@ -185,7 +192,7 @@ class SynTensor:
                             H[s][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Cx[t][i] * self.Cx[t][j]
 
 
-        g = np.zeros([self.N,self.m_bar],np.float)
+        g = np.zeros([self.N,self.m_bar],np.double)
 
         for r in range(self.N):
             for l in range(self.m_bar):
@@ -196,13 +203,14 @@ class SynTensor:
         ans = np.zeros([self.N,self.m_bar])
 
         for s in range(self.N):
-            ans[s] = np.linalg.inv(H[s]).dot(g[s])
+            #tmp = np;linalg.inv()
+            ans[s] = np.linalg.pinv(H[s]).dot(g[s])
         return ans
 
     def optC(self):
 
         # 公式(20) 这个公式大小又双叒叕写错了
-        H = np.zeros([self.n,self.m_bar,self.m_bar],np.float)
+        H = np.zeros([self.n,self.m_bar,self.m_bar],np.double)
         for r  in range(self.N):
             for i in range(self.m_bar):
                 for j in range(self.m_bar):
@@ -211,7 +219,7 @@ class SynTensor:
                             H[t][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Bx[s][i] * self.Bx[s][j]
 
 
-        g = np.zeros([self.n,self.m_bar],np.float)
+        g = np.zeros([self.n,self.m_bar],np.double)
 
         for r in range(self.N):
             for l in range(self.m_bar):
@@ -222,5 +230,5 @@ class SynTensor:
         ans = np.zeros([self.N,self.m_bar])
 
         for t in range(self.n):
-            ans[t] = np.linalg.inv(H[t]).dot(g[t])
+            ans[t] = np.linalg.pinv(H[t]).dot(g[t])
         return ans
