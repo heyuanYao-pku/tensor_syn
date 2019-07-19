@@ -99,9 +99,10 @@ class SynTensor:
                     tmp = np.dot(tmp,self.Clist[i][j][k])
                     self.Wrst[self.indBegin[j]:self.indEnd[j], self.indBegin[i]:self.indEnd[i], k] = self.Rlist[i][j][k] = tmp
 
+
     def solution(self):
 
-        m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
+        self.m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
         while(True):
             tmp1, tmp2,tmp3 = self.Ax,self.Bx,self.Cx
             self.Ax = self.optA()
@@ -111,6 +112,10 @@ class SynTensor:
                 break
 
     def dist(self, A, B, C):
+        a = A - self.Ax
+        b = B - self.Bx
+        c = C - self.Cx
+        return np.linalg.norm(a) + np.linalg.norm(b) + np.linalg(c)
 
     def get_init(self):
 
@@ -133,3 +138,81 @@ class SynTensor:
         Ctmp = np.ones([self.n,m_bar])
 
         return m_bar, tmp, tmp, Ctmp
+
+    def optA(self):
+
+        # 公式(17)
+        H = np.zeros([self.N,self.m_bar,self.m_bar],np.float)
+        for r in range(self.N):
+            for i in range(self.m_bar):
+                for j in range(self.m_bar):
+                    for s in range(self.N):
+                        for t in range(self.n):
+                            H[r][i][j] += self.Wrst[r][s][t]*self.Bx[s][i]*self.Bx[s][j]*self.Cx[t][i] * self.Cx[t][j]
+
+
+        g = np.zeros([self.N,self.m_bar],np.float)
+
+        for r in range(self.N):
+            for l in range(self.m_bar):
+                for s in range(self.N):
+                    for t in range(self.n):
+                        g[r] += self.Wrst[r][s][t] * self.Bx[s][l] * self.Cx[t][l] * self.R[r][s][t]
+
+        ans = np.zeros([self.N,self.m_bar])
+
+        for r in range(self.N):
+            ans[r] = np.linalg.inv(H[r]).dot(g[r])
+        return ans
+
+    def optB(self):
+
+        # 公式(19) ctrl c ctrl v 不规范，亲人两行泪
+        H = np.zeros([self.N,self.m_bar,self.m_bar],np.float)
+        for r in range(self.N):
+            for i in range(self.m_bar):
+                for j in range(self.m_bar):
+                    for s in range(self.N):
+                        for t in range(self.n):
+                            H[s][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Cx[t][i] * self.Cx[t][j]
+
+
+        g = np.zeros([self.N,self.m_bar],np.float)
+
+        for r in range(self.N):
+            for l in range(self.m_bar):
+                for s in range(self.N):
+                    for t in range(self.n):
+                        g[r] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
+
+        ans = np.zeros([self.N,self.m_bar])
+
+        for s in range(self.N):
+            ans[s] = np.linalg.inv(H[s]).dot(g[s])
+        return ans
+
+    def optC(self):
+
+        # 公式(20) 这个公式大小又双叒叕写错了
+        H = np.zeros([self.n,self.m_bar,self.m_bar],np.float)
+        for r  in range(self.N):
+            for i in range(self.m_bar):
+                for j in range(self.m_bar):
+                    for s in range(self.N):
+                        for t in range(self.n):
+                            H[t][i][j] += self.Wrst[r][s][t]*self.Ax[r][l]*self.Ax[r][j]*self.Bx[s][i] * self.Bx[s][j]
+
+
+        g = np.zeros([self.n,self.m_bar],np.float)
+
+        for r in range(self.N):
+            for l in range(self.m_bar):
+                for s in range(self.N):
+                    for t in range(self.n):
+                        g[t] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Bx[s][l] * self.R[r][s][t]
+
+        ans = np.zeros([self.N,self.m_bar])
+
+        for t in range(self.n):
+            ans[t] = np.linalg.inv(H[t]).dot(g[t])
+        return ans
