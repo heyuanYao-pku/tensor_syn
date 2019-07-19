@@ -110,6 +110,14 @@ class SynTensor:
             self.Cx = self.optC()
             if self.dist(tmp1,tmp2,tmp3) <= 1e-3 :
                 break
+        tmp = np.transpose(self.Ax).dot(self.Bx) + np.transpose(self.Bx).dot(self.Ax)
+        tmp = tmp /2
+        val,vec = np.linalg.eig(tmp)
+        ind = val.argsort()
+        ind = ind [::-1]
+        vec = vec[:,ind]
+        Q = vec[:,self.m_bar]
+        return np.transpose(Q)
 
     def dist(self, A, B, C):
         a = A - self.Ax
@@ -133,7 +141,7 @@ class SynTensor:
         m_bar = dv.argmax()+1 # 因为python是从零开始标的
 
         # 获得AB初值
-        tmp  = np.dot( eigvector[0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
+        tmp  = np.dot( eigvector[:,0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
 
         Ctmp = np.ones([self.n,m_bar])
 
