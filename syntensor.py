@@ -97,3 +97,14 @@ class SynTensor:
         eigvalue = eigvalue[idx]
         eigvector = eigvector[:,idx]
 
+        # 求最大的gap来确定m_bar
+        l = len(eigvalue)
+        dv = eigvalue[0:l-1] - eigvalue[1:l]
+        m_bar = dv.argmax()+1 # 因为python是从零开始标的
+
+        # 获得AB初值
+        tmp  = np.dot( eigvector[0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
+
+        Ctmp = np.ones([self.n,m_bar])
+
+        return m_bar, tmp, tmp, Ctmp
