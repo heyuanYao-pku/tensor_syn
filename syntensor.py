@@ -23,7 +23,7 @@ class SynTensor:
         s = 0
         for i in range(n):
             self.indBegin[i] = mlist[0] if i==0 else self.indBegin[i-1]+mlist[i]
-        self.indEnd = [ self.indBegin[i+1] if i!= n-1 else N for i in range(n)  ]
+        self.indEnd = [ self.indBegin[i+1] if i!= n-1 else self.N for i in range(n)  ]
 
         # 处理Plist的型状，让他变成mi*mj的
         self.Plist = np.zeros((n,n),np.ndarray)
@@ -34,6 +34,8 @@ class SynTensor:
         self.buildP()
         self.buildC()
         self.buildR()
+
+
 
     def buildP(self):
         self.P = np.zeros([self.N,self.N],np.int)
@@ -83,9 +85,32 @@ class SynTensor:
                     self.R[self.indBegin[j]:self.indEnd[j], self.indBegin[i]:self.indEnd[i],k] = self.Rlist[i][j][k]
 
 
+    def build_Wrst(self):
+
+        '''
+        获取R中每个点都和哪个C相乘，方法是先把他们都设成全为1的数组，模拟一次与C相乘的结果就是与之相乘的Cijk
+        :return:
+        '''
+        self.Wrst = np.ones([self.N,self.N,self.n],np.float)
+        for i in range(self.n):
+            for j in range(self.n):
+                for k in range(self.n): # 取出来一小片
+                    tmp = self.Wrst[ self.indBegin[j]:self.indEnd[j], self.indBegin[i]:self.indEnd[i], k]
+                    tmp = np.dot(tmp,self.Clist[i][j][k])
+                    self.Wrst[self.indBegin[j]:self.indEnd[j], self.indBegin[i]:self.indEnd[i], k] = self.Rlist[i][j][k] = tmp
+
     def solution(self):
 
         m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
+        while(True):
+            tmp1, tmp2,tmp3 = self.Ax,self.Bx,self.Cx
+            self.Ax = self.optA()
+            self.Bx = self.optB()
+            self.Cx = self.optC()
+            if self.dist(tmp1,tmp2,tmp3) <= 1e-3 :
+                break
+
+    def dist(self, A, B, C):
 
     def get_init(self):
 
