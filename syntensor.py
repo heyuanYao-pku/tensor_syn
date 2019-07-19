@@ -200,7 +200,7 @@ class SynTensor:
                 for j in range(self.m_bar):
                     for s in range(self.N):
                         for t in range(self.n):
-                            H[t][i][j] += self.Wrst[r][s][t]*self.Ax[r][l]*self.Ax[r][j]*self.Bx[s][i] * self.Bx[s][j]
+                            H[t][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Bx[s][i] * self.Bx[s][j]
 
 
         g = np.zeros([self.n,self.m_bar],np.float)
