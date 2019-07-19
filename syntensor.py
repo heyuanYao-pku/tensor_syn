@@ -105,15 +105,22 @@ class SynTensor:
     def solution(self):
 
         self.build_Wrst()
+
         self.m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
+
         self.Ax = np.array(self.Ax,np.double)
-        self.Bx = np.array(self.Ax, np.double)
-        self.Cx = np.array(self.Ax, np.double)
+        self.Bx = np.array(self.Bx, np.double)
+        self.Cx = np.array(self.Cx, np.double)
+
+
         while(True):
-            tmp1, tmp2,tmp3 = self.Ax,self.Bx,self.Cx
+            tmp1, tmp2,tmp3 = self.Ax.copy(),self.Bx.copy(),self.Cx.copy()
             self.Ax = self.optA()
             self.Bx = self.optB()
             self.Cx = self.optC()
+            print(self.Ax, self.Bx, self.Cx)
+            d = self.dist(tmp1,tmp2,tmp3)
+            print(d)
             if self.dist(tmp1,tmp2,tmp3) <= 1e-3 :
                 break
         tmp = np.transpose(self.Ax).dot(self.Bx) + np.transpose(self.Bx).dot(self.Ax)
@@ -172,7 +179,7 @@ class SynTensor:
             for l in range(self.m_bar):
                 for s in range(self.N):
                     for t in range(self.n):
-                        g[r] += self.Wrst[r][s][t] * self.Bx[s][l] * self.Cx[t][l] * self.R[r][s][t]
+                        g[r][l] += self.Wrst[r][s][t] * self.Bx[s][l] * self.Cx[t][l] * self.R[r][s][t]
 
         ans = np.zeros([self.N,self.m_bar])
 
@@ -198,12 +205,11 @@ class SynTensor:
             for l in range(self.m_bar):
                 for s in range(self.N):
                     for t in range(self.n):
-                        g[r] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
+                        g[r][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
 
         ans = np.zeros([self.N,self.m_bar])
 
         for s in range(self.N):
-            #tmp = np;linalg.inv()
             ans[s] = np.linalg.pinv(H[s]).dot(g[s])
         return ans
 
@@ -225,9 +231,9 @@ class SynTensor:
             for l in range(self.m_bar):
                 for s in range(self.N):
                     for t in range(self.n):
-                        g[t] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Bx[s][l] * self.R[r][s][t]
+                        g[t][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Bx[s][l] * self.R[r][s][t]
 
-        ans = np.zeros([self.N,self.m_bar])
+        ans = np.zeros([self.n,self.m_bar])
 
         for t in range(self.n):
             ans[t] = np.linalg.pinv(H[t]).dot(g[t])
