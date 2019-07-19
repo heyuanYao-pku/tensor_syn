@@ -115,15 +115,33 @@ class SynTensor:
 
         while(True):
             tmp1, tmp2,tmp3 = self.Ax.copy(),self.Bx.copy(),self.Cx.copy()
+            '''
+            while(True):
+                tmp11 = self.Ax.copy()
+                self.Ax = self.optA()
+                if self.dist(self.Ax,tmp11) < 1e-3:
+                    break;
+            while (True):
+                tmp22 = self.Bx.copy()
+                self.Bx = self.optB()
+                if self.dist(self.Bx, tmp22) < 1e-3:
+                    break;
+            while (True):
+                tmp33 = self.Cx.copy()
+                self.Cx = self.optC()
+                if self.dist(self.Cx, tmp33) < 1e-3:
+                    break;
+            '''
             self.Ax = self.optA()
             self.Bx = self.optB()
             self.Cx = self.optC()
-            print(self.Ax, self.Bx, self.Cx)
-            d = self.dist(tmp1,tmp2,tmp3)
+            #print(self.Ax, self.Bx, self.Cx)
+            d = self.dist(tmp1,self.Ax) + self.dist(tmp2,self.Bx) + self.dist(tmp3,self.Cx)
             print(d)
-            if self.dist(tmp1,tmp2,tmp3) <= 1e-3 :
+            if d <= 1e-3 :
                 break
-        tmp = np.transpose(self.Ax).dot(self.Bx) + np.transpose(self.Bx).dot(self.Ax)
+
+        tmp = self.Bx.dot(np.transpose(self.Ax)) + self.Ax.dot(np.transpose(self.Bx))
         tmp = tmp /2
         val,vec = np.linalg.eig(tmp)
         ind = val.argsort()
@@ -132,11 +150,8 @@ class SynTensor:
         Q = vec[:,self.m_bar]
         return np.transpose(Q)
 
-    def dist(self, A, B, C):
-        a = A - self.Ax
-        b = B - self.Bx
-        c = C - self.Cx
-        return np.linalg.norm(a) + np.linalg.norm(b) + np.linalg.norm(c)
+    def dist(self, A, B):
+        return np.linalg.norm(A-B)
 
     def get_init(self):
 
@@ -185,6 +200,7 @@ class SynTensor:
 
         for r in range(self.N):
             ans[r] = np.linalg.pinv(H[r]).dot(g[r])
+        ans = self.normalize(ans)
         return ans
 
     def optB(self):
@@ -211,6 +227,9 @@ class SynTensor:
 
         for s in range(self.N):
             ans[s] = np.linalg.pinv(H[s]).dot(g[s])
+        print(ans)
+        ans = self.normalize(ans)
+        print(ans)
         return ans
 
     def optC(self):
@@ -237,4 +256,12 @@ class SynTensor:
 
         for t in range(self.n):
             ans[t] = np.linalg.pinv(H[t]).dot(g[t])
+        ans = self.normalize(ans)
         return ans
+
+    def normalize(self,vectors):
+        _,m =np.shape(vectors)
+        tmp = vectors.copy()
+        for i in range(m):
+            tmp[:,i] = tmp[:,i] / sum(tmp[:,i]**2)**0.5
+        return tmp
