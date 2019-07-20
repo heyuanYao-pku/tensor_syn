@@ -31,9 +31,11 @@ class SynTensor:
             for j in range(n):
                 tmp = np.array(Plist[i][j])
                 self.Plist[i][j] = tmp[ 0:mlist[j],0:mlist[i] ]
-
+        print('building P')
         self.buildP()
+        print('building C')
         self.buildC()
+        print('building R')
         self.buildR()
 
 
@@ -119,23 +121,7 @@ class SynTensor:
             cont +=1
             if cont == 100:
                 break
-            '''
-            while(True):
-                tmp11 = self.Ax.copy()
-                self.Ax = self.optA()
-                if self.dist(self.Ax,tmp11) < 1e-3:
-                    break;
-            while (True):
-                tmp22 = self.Bx.copy()
-                self.Bx = self.optB()
-                if self.dist(self.Bx, tmp22) < 1e-3:
-                    break;
-            while (True):
-                tmp33 = self.Cx.copy()
-                self.Cx = self.optC()
-                if self.dist(self.Cx, tmp33) < 1e-3:
-                    break;
-            '''
+
             self.Ax = self.optA()
             self.Bx = self.optB()
             self.Cx = self.optC()
@@ -145,8 +131,6 @@ class SynTensor:
             if d <= 1e-3 :
                 break
 
-        #self.Bx = np.transpose(self.Bx)
-        #self.Ax = np.transpose(self.Ax)
         tmp = self.Bx.dot(np.transpose(self.Ax)) + self.Ax.dot(np.transpose(self.Bx))
         print(np.shape(tmp))
         tmp = tmp /2
@@ -171,12 +155,15 @@ class SynTensor:
 
         # 获得排序后的特征值和特征向量
         eigvalue = eigvalue[idx]
+        print("eigvalue:",eigvalue)
         eigvector = eigvector[:,idx]
 
         # 求最大的gap来确定m_bar
         l = len(eigvalue)
         dv = eigvalue[0:l-1] - eigvalue[1:l]
         m_bar = dv.argmax()+1 # 因为python是从零开始标的
+
+        #m_bar = max(self.mList) # 要不要这样？
 
         # 获得AB初值
         tmp  = np.dot( eigvector[:,0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
@@ -238,9 +225,7 @@ class SynTensor:
 
         for s in range(self.N):
             ans[s] = np.linalg.pinv(H[s]).dot(g[s])
-        print(ans)
-        #ans = self.normalize(ans)
-        print(ans)
+
         return ans
 
     def optC(self):
