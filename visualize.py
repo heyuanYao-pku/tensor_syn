@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import util.util as util
 import cv2
 
 
@@ -8,9 +7,12 @@ import cv2
 tensor_result_file = open('temp_result_new/tensor_result/matres_156.txt','r')
 image_nums = 156
 save_path = 'temp_result_new/tensor_result/temp_%d'%image_nums
-util.mkdir(save_path)
+
 Q_index = []
 image_list_old = np.load('temp_result_new/tensor_result/image_list.npy')
+
+
+### 这些目录你重新设定一下 甚至你可以重构一下
 w,h = 256,256
 while True:
     this_line = tensor_result_file.readline().strip()
