@@ -107,14 +107,18 @@ class SynTensor:
         self.build_Wrst()
 
         self.m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
-
+        print(self.m_bar)
         self.Ax = np.array(self.Ax,np.double)
         self.Bx = np.array(self.Bx, np.double)
         self.Cx = np.array(self.Cx, np.double)
 
+        cont  = 0
 
         while(True):
             tmp1, tmp2,tmp3 = self.Ax.copy(),self.Bx.copy(),self.Cx.copy()
+            cont +=1
+            if cont == 100:
+                break
             '''
             while(True):
                 tmp11 = self.Ax.copy()
@@ -141,13 +145,19 @@ class SynTensor:
             if d <= 1e-3 :
                 break
 
+        #self.Bx = np.transpose(self.Bx)
+        #self.Ax = np.transpose(self.Ax)
         tmp = self.Bx.dot(np.transpose(self.Ax)) + self.Ax.dot(np.transpose(self.Bx))
+        print(np.shape(tmp))
         tmp = tmp /2
+        assert (tmp == np.transpose(tmp)).all(), '???'
         val,vec = np.linalg.eig(tmp)
         ind = val.argsort()
         ind = ind [::-1]
         vec = vec[:,ind]
-        Q = vec[:,self.m_bar]
+
+        Q = vec[:,0:self.m_bar]
+        print(np.shape(Q))
         return np.transpose(Q)
 
     def dist(self, A, B):
@@ -200,12 +210,13 @@ class SynTensor:
 
         for r in range(self.N):
             ans[r] = np.linalg.pinv(H[r]).dot(g[r])
-        ans = self.normalize(ans)
+        #ans = self.normalize(ans)
         return ans
 
     def optB(self):
 
         # 公式(19) ctrl c ctrl v 不规范，亲人两行泪
+        # k = self.m_bar
         H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
         for r in range(self.N):
             for i in range(self.m_bar):
@@ -221,14 +232,14 @@ class SynTensor:
             for l in range(self.m_bar):
                 for s in range(self.N):
                     for t in range(self.n):
-                        g[r][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
+                        g[s][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
 
         ans = np.zeros([self.N,self.m_bar])
 
         for s in range(self.N):
             ans[s] = np.linalg.pinv(H[s]).dot(g[s])
         print(ans)
-        ans = self.normalize(ans)
+        #ans = self.normalize(ans)
         print(ans)
         return ans
 
@@ -256,7 +267,7 @@ class SynTensor:
 
         for t in range(self.n):
             ans[t] = np.linalg.pinv(H[t]).dot(g[t])
-        ans = self.normalize(ans)
+        #ans = self.normalize(ans)
         return ans
 
     def normalize(self,vectors):

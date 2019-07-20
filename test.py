@@ -16,4 +16,6 @@ for i in range(n):
         Plist[j][i] = np.transpose(Plist[i][j])
 print(Plist[0][1])
 tensor = syntensor.SynTensor(n,mlist,Plist)
-print(tensor.solution())
+k = tensor.solution()
+print(np.shape(k))
+print(k)
