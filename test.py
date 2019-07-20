@@ -3,7 +3,7 @@ import numpy as np
 import json
 import sys
 
-fname = 'data_10.json'
+fname = 'data_156.json'
 sys.stdin = open(fname,'r')
 data = input()
 data = json.loads(data)
@@ -25,4 +25,5 @@ print(np.shape(k))
 f = open('result156.txt','w')
 sys.stdout = f
 np.set_printoptions(linewidth = np.nan)
+np.set_printoptions(threshold=np.inf)
 print(np.float32(k))
