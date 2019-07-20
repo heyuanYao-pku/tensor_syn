@@ -3,7 +3,7 @@ import numpy as np
 import json
 import sys
 
-fname = 'data_156.json'
+fname = 'data_10.json'
 sys.stdin = open(fname,'r')
 data = input()
 data = json.loads(data)
