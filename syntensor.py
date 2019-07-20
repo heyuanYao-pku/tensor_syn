@@ -45,7 +45,6 @@ class SynTensor:
         n = self.n
         for i in range(n):
             for j in range(n):
-                print(i,j)
                 self.P[self.indBegin[j]:self.indEnd[j],self.indBegin[i]:self.indEnd[i]] = self.Plist[i][j]
 
 
@@ -114,17 +113,15 @@ class SynTensor:
         self.Bx = np.array(self.Bx, np.double)
         self.Cx = np.array(self.Cx, np.double)
 
-        self.test_opt()
-        return None
+
         cont  = 0
         print("cont")
 
         while(True):
-            print('tmp?')
+
             tmp1, tmp2,tmp3 = self.Ax.copy(),self.Bx.copy(),self.Cx.copy()
-            print('cont')
+
             cont +=1
-            print('if')
             if cont == 100:
                 break
             print('OPT A')
@@ -186,20 +183,9 @@ class SynTensor:
     def optA(self):
 
         # 公式(17)
-        print(self.N)
 
         H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
         for r in range(self.N):
-            #print(r)
-            '''
-            for s in range(self.N):
-                for t in range(self.n):
-                    tmp = self.Wrst[r][s][t]
-                    for i in range(self.m_bar):
-                        tmp_i = self.Bx[s][i] *self.Cx[t][i]
-                        for j in range(self.m_bar):
-                            H[r][i][j] += tmp* tmp_i *self.Bx[s][j] * self.Cx[t][j]
-            '''
             for t in range(self.n):
                 B_tmp = self.Wrst[r,:,t]
                 B_tmp = self.Bx.transpose() * B_tmp
@@ -208,45 +194,46 @@ class SynTensor:
                 for i in range(self.m_bar):
                     for j in range(self.m_bar):
                         H[r][i][j] += B_tmp[i][j]*C[i]*C[j]
-        print('getH')
 
         g = np.zeros([self.N,self.m_bar],np.double)
 
         for r in range(self.N):
-            for l in range(self.m_bar):
-                for s in range(self.N):
-                    for t in range(self.n):
-                        g[r][l] += self.Wrst[r][s][t] * self.Bx[s][l] * self.Cx[t][l] * self.R[r][s][t]
-        print('getG')
+            for s in range(self.N):
+                C_tmp = np.multiply( self.Wrst[r][s], self.R[r][s] )
+                C_tmp = np.dot(C_tmp,self.Cx)
+                g[r] += np.multiply( self.Bx[s],C_tmp )
+
         ans = np.zeros([self.N,self.m_bar])
 
         for r in range(self.N):
             ans[r] = np.linalg.pinv(H[r]).dot(g[r])
         #ans = self.normalize(ans)
-        print('getans')
         return ans
 
     def optB(self):
 
         # 公式(19) ctrl c ctrl v 不规范，亲人两行泪
-        # k = self.m_bar
-        H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
-        for r in range(self.N):
-            print(r)
-            for i in range(self.m_bar):
-                for j in range(self.m_bar):
-                    for s in range(self.N):
-                        for t in range(self.n):
-                            H[s][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Cx[t][i] * self.Cx[t][j]
 
+        H = np.zeros([self.N,self.m_bar,self.m_bar],np.double)
+
+        for s in range(self.N):
+            for t in range(self.n):
+                A_tmp = self.Wrst[:,s,t]
+                A_tmp = self.Ax.transpose() * A_tmp
+                A_tmp = A_tmp.dot(self.Ax)
+                C = self.Cx[t]
+                for i in range(self.m_bar):
+                    for j in range(self.m_bar):
+                        H[s][i][j] += A_tmp[i][j]*C[i]*C[j]
 
         g = np.zeros([self.N,self.m_bar],np.double)
 
-        for r in range(self.N):
-            for l in range(self.m_bar):
-                for s in range(self.N):
-                    for t in range(self.n):
-                        g[s][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Cx[t][l] * self.R[r][s][t]
+
+        for s in range(self.N):
+            for r in range(self.N):
+                C_tmp = np.multiply(self.Wrst[r][s], self.R[r][s])
+                C_tmp = np.dot(C_tmp, self.Cx)
+                g[s] += np.multiply(self.Ax[r], C_tmp)
 
         ans = np.zeros([self.N,self.m_bar])
 
@@ -259,23 +246,26 @@ class SynTensor:
 
         # 公式(20) 这个公式大小又双叒叕写错了
         H = np.zeros([self.n,self.m_bar,self.m_bar],np.double)
-        for r  in range(self.N):
 
-            for i in range(self.m_bar):
-                for j in range(self.m_bar):
-                    for s in range(self.N):
-                        for t in range(self.n):
-                            H[t][i][j] += self.Wrst[r][s][t]*self.Ax[r][i]*self.Ax[r][j]*self.Bx[s][i] * self.Bx[s][j]
+        for t in range(self.n):
+            for r in range(self.N):
+                B_tmp = self.Wrst[r, :, t]
+                B_tmp = self.Bx.transpose() * B_tmp
+                B_tmp = B_tmp.dot(self.Bx)
+                A = self.Ax[r]
+                for i in range(self.m_bar):
+                    for j in range(self.m_bar):
+                        H[t][i][j] += B_tmp[i][j] * A[i] * A[j]
 
 
         g = np.zeros([self.n,self.m_bar],np.double)
 
-        for r in range(self.N):
-            for l in range(self.m_bar):
-                for s in range(self.N):
-                    for t in range(self.n):
-                        g[t][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Bx[s][l] * self.R[r][s][t]
 
+        for t in range(self.n):
+            for s in range(self.N):
+                A_tmp = np.multiply( self.Wrst[:,s,t], self.R[:,s,t] )
+                A_tmp = np.dot(A_tmp,self.Ax)
+                g[t] += np.multiply( self.Bx[s],A_tmp )
         ans = np.zeros([self.n,self.m_bar])
 
         for t in range(self.n):
@@ -291,27 +281,17 @@ class SynTensor:
         return tmp
 
     def test_opt(self):
-        H = np.zeros([self.N, self.m_bar, self.m_bar], np.double)
+        g = np.zeros([self.n, self.m_bar], np.double)
         for r in range(self.N):
-            # print(r)
+            for l in range(self.m_bar):
+                for s in range(self.N):
+                    for t in range(self.n):
+                        g[t][l] += self.Wrst[r][s][t] * self.Ax[r][l] * self.Bx[s][l] * self.R[r][s][t]
 
+        g1 = np.zeros([self.n, self.m_bar], np.double)
+        for t in range(self.n):
             for s in range(self.N):
-                for t in range(self.n):
-                    tmp = self.Wrst[r][s][t]
-                    for i in range(self.m_bar):
-                        tmp_i = self.Bx[s][i] *self.Cx[t][i]
-                        for j in range(self.m_bar):
-                            H[r][i][j] += tmp* tmp_i *self.Bx[s][j] * self.Cx[t][j]
-        H1 = np.zeros([self.N, self.m_bar, self.m_bar], np.double)
-        for r in range(self.N):
-            for t in range(self.n):
-                B_tmp = self.Wrst[r, :, t]
-                B_tmp = self.Bx.transpose() * B_tmp
-                B_tmp = B_tmp.dot(self.Bx)
-                C = self.Cx[t]
-                for i in range(self.m_bar):
-                    for j in range(self.m_bar):
-                        H1[r][i][j] += B_tmp[i][j] * C[i] * C[j]
-        #print(H)
-        #print(H1)
-        print( (H-H1) )
+                A_tmp = np.multiply(self.Wrst[:, s, t], self.R[:, s, t])
+                A_tmp = np.dot(A_tmp, self.Ax)
+                g1[t] += np.multiply(self.Bx[s], A_tmp)
+        print(g-g1)
