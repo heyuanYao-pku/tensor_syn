@@ -10,10 +10,12 @@ class SynTensor:
         '''
         assert len(mlist) == n,'Length of mlist must equal to n'
         assert np.shape(Plist) == (n,n), 'Size of Plist must be (n,n)'
+        '''
         for i in range(n):
             for j in range(i+1,n):
                 if (Plist[i][j] != np.transpose(Plist[j][i])).any():
                     print(i,j)
+        '''
         Plist = np.transpose(Plist)
         self.n = n
         self.mList = mlist.copy()
@@ -44,9 +46,14 @@ class SynTensor:
         self.P = np.zeros([self.N,self.N],np.double)
         n = self.n
         for i in range(n):
-            for j in range(n):
-                self.P[self.indBegin[j]:self.indEnd[j],self.indBegin[i]:self.indEnd[i]] = self.Plist[i][j]
-
+            for j in range(i,n):
+                k = np.random.randint(0, 2)
+                if k==0:
+                    self.P[self.indBegin[j]:self.indEnd[j],self.indBegin[i]:self.indEnd[i]] = self.Plist[i][j]
+                    self.P[self.indBegin[i]:self.indEnd[i], self.indBegin[j]:self.indEnd[j]] = np.transpose( self.Plist[i][j] )
+                else:
+                    self.P[self.indBegin[j]:self.indEnd[j], self.indBegin[i]:self.indEnd[i]] = np.transpose( self.Plist[j][i] )
+                    self.P[self.indBegin[i]:self.indEnd[i], self.indBegin[j]:self.indEnd[j]] = self.Plist[j][i]
 
     def buildC(self):
         '''
@@ -123,7 +130,7 @@ class SynTensor:
 
             cont +=1
             print("iter%d"%cont)
-            if cont == 1000:
+            if cont == 100:
                 break
             print('OPT A')
             self.Ax = self.optA()
