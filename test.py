@@ -3,7 +3,7 @@ import numpy as np
 import json
 import sys
 
-fname = 'data_156.json'
+fname = 'data_10.json'
 sys.stdin = open(fname,'r')
 data = input()
 data = json.loads(data)
@@ -22,7 +22,7 @@ tensor = syntensor.SynTensor(n,mlist,Plist)
 print('object building finished')
 k = tensor.solution()
 print(np.shape(k))
-f = open('result156.txt','w')
+f = open('result156_3.txt','w')
 sys.stdout = f
 np.set_printoptions(linewidth = np.nan)
 np.set_printoptions(threshold=np.inf)

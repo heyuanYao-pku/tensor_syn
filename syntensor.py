@@ -122,7 +122,8 @@ class SynTensor:
             tmp1, tmp2,tmp3 = self.Ax.copy(),self.Bx.copy(),self.Cx.copy()
 
             cont +=1
-            if cont == 100:
+            print("iter%d"%cont)
+            if cont == 1000:
                 break
             print('OPT A')
             self.Ax = self.optA()
@@ -168,7 +169,7 @@ class SynTensor:
         dv = eigvalue[0:l-1] - eigvalue[1:l]
         m_bar = dv.argmax()+1 # 因为python是从零开始标的
 
-        #m_bar = max(self.mList) # 要不要这样？
+        #m_bar = 3 # 要不要这样？
 
         # 获得AB初值
         tmp  = np.dot( eigvector[:,0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
@@ -295,3 +296,15 @@ class SynTensor:
                 A_tmp = np.dot(A_tmp, self.Ax)
                 g1[t] += np.multiply(self.Bx[s], A_tmp)
         print(g-g1)
+
+        def rounded_solution(self, th,sol =None):
+            if sol == None:
+                sol = self.solution()
+            n,m = np.shape(sol)
+            rounded = None
+            flag = np.zeros([n],np.int)
+            for r in range(n):
+                if(flag[r] != 0):
+                    continue
+                flag[r] = 1
+
