@@ -172,7 +172,6 @@ class SynTensor:
 
         # 获得排序后的特征值和特征向量
         eigvalue = eigvalue[idx]
-        print("eigvalue:",eigvalue)
         eigvector = eigvector[:,idx]
 
         # 求最大的gap来确定m_bar
@@ -310,7 +309,7 @@ class SynTensor:
 
     def rounded_solution(self, th=0.5, k=2, t=2, sol=None):
 
-        if sol == None:
+        if sol is None:
             sol = self.solution()
 
         sol = np.transpose(sol)
@@ -321,6 +320,7 @@ class SynTensor:
 
         for r in range(n):
             sol[r] = sol[r] / sum(sol[r]**2)**0.5
+
         N = np.cumsum(self.mList)
         flag = np.zeros([n], np.int)
         ans = np.zeros([n, 0], np.int)
@@ -346,7 +346,6 @@ class SynTensor:
                     mx = mx[::-1]
                     if np.size(mx) >= k:
                         mx = mx[0:k]
-
 
                     for j in mx:
                         z = np.zeros([0,0],np.int)
