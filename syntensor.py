@@ -16,7 +16,7 @@ class SynTensor:
                 if (Plist[i][j] != np.transpose(Plist[j][i])).any():
                     print(i,j)
         '''
-        Plist = np.transpose(Plist)
+        #Plist = np.transpose(Plist)
         self.n = n
         self.mList = mlist.copy()
         self.N = sum(mlist)
@@ -32,7 +32,13 @@ class SynTensor:
         for i in range(n):
             for j in range(n):
                 tmp = np.array(Plist[i][j])
+                '''
+                if(np.shape(Plist[i][j]) != (mlist[j],mlist[i]) ):
+                    print(Plist[i][j],mlist[j],mlist[i])
+                    return
+                '''
                 self.Plist[i][j] = tmp[ 0:mlist[j],0:mlist[i] ]
+
         print('building P')
         self.buildP()
         print('building C')
@@ -115,14 +121,13 @@ class SynTensor:
         self.build_Wrst()
 
         self.m_bar,self.Ax,self.Bx,self.Cx = self.get_init()
-        print(self.m_bar)
+        print('m_bar = ',self.m_bar)
         self.Ax = np.array(self.Ax,np.double)
         self.Bx = np.array(self.Bx, np.double)
         self.Cx = np.array(self.Cx, np.double)
 
 
         cont  = 0
-        print("cont")
 
         while(True):
 
@@ -138,14 +143,13 @@ class SynTensor:
             self.Bx = self.optB()
             print('OPT C')
             self.Cx = self.optC()
-            #print(self.Ax, self.Bx, self.Cx)
+
             d = self.dist(tmp1,self.Ax) + self.dist(tmp2,self.Bx) + self.dist(tmp3,self.Cx)
-            print(d)
+            print('fraction rate = ',d)
             if d <= 1e-3 :
                 break
 
         tmp = self.Bx.dot(np.transpose(self.Ax)) + self.Ax.dot(np.transpose(self.Bx))
-        print(np.shape(tmp))
         tmp = tmp /2
         assert (tmp == np.transpose(tmp)).all(), '???'
         val,vec = np.linalg.eig(tmp)
@@ -176,7 +180,7 @@ class SynTensor:
         dv = eigvalue[0:l-1] - eigvalue[1:l]
         m_bar = dv.argmax()+1 # 因为python是从零开始标的
 
-        #m_bar = 3 # 要不要这样？
+        m_bar = max(2,m_bar) # 要不要这样？
 
         # 获得AB初值
         tmp  = np.dot( eigvector[:,0:m_bar] , np.diag(eigvalue[0:m_bar])**0.5 )
@@ -304,14 +308,53 @@ class SynTensor:
                 g1[t] += np.multiply(self.Bx[s], A_tmp)
         print(g-g1)
 
-        def rounded_solution(self, th,sol =None):
-            if sol == None:
-                sol = self.solution()
-            n,m = np.shape(sol)
-            rounded = None
-            flag = np.zeros([n],np.int)
-            for r in range(n):
-                if(flag[r] != 0):
-                    continue
-                flag[r] = 1
+    def rounded_solution(self, th=0.5, k=2, t=2, sol=None):
 
+        if sol == None:
+            sol = self.solution()
+
+        sol = np.transpose(sol)
+
+        n, m = np.shape(sol)
+
+        print('n,m',n,m)
+
+        for r in range(n):
+            sol[r] = sol[r] / sum(sol[r]**2)**0.5
+        N = np.cumsum(self.mList)
+        flag = np.zeros([n], np.int)
+        ans = np.zeros([n, 0], np.int)
+        for r in range(n):
+            if (flag[r] != 0):
+                continue
+
+            cur_ans = np.zeros([n, 1], np.int)
+            cur_ans[r] = 1
+            flag[r] = flag[r] + 1
+
+            ob = np.where(N > r)
+            ob = np.min(ob)
+
+            if ob < self.n:
+                for ob1 in range(ob + 1, self.n):
+
+                    cc = np.dot(sol[r, :], np.transpose(sol[N[ob1 - 1] : N[ob1], :]))
+                    q = flag[ N[ob1 - 1]:N[ob1] ]
+                    mx = cc[ np.where( q <= t-1 ) ].copy()
+
+                    mx = np.sort(mx)
+                    mx = mx[::-1]
+                    if np.size(mx) >= k:
+                        mx = mx[0:k]
+
+
+                    for j in mx:
+                        z = np.zeros([0,0],np.int)
+                        if j > th:
+                            z = np.where(cc == j) + N[ob1 - 1]
+                        if np.size(z) > 0:
+                            cur_ans[z] = 1
+                            flag[z] +=  1
+
+            ans = np.hstack([ans, cur_ans])
+        return ans
