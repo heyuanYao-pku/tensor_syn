@@ -430,26 +430,50 @@ class SynTensor:
         for image_index in range(data_num):
             this_image_old_label = image_list_old[image_index]
             this_image_part_nums = int(this_image_old_label.max())
-            print(this_image_part_nums)
+            #print(this_image_part_nums)
             temp_part_index = []
             new_this_image = np.zeros([w, h],np.ndarray)
             for part_index in range(1, this_image_part_nums + 1):
                 this_part_map = Q_index[now_n]
                 now_n += 1
-                this_part_new_label = this_part_map.index(1)
+                this_part_new_label = np.where( this_part_map==1 )
+                if(np.size(this_part_new_label) >1 ):
+                    print('>1:', this_part_map)
+                else:
+                    print('<=1:',this_part_map)
+
+
+                this_part_new_label = np.array( [cc for cc in this_part_new_label] )
+                #print('????',  np.ndarray( [cc[0] for cc in this_part_new_label] ) )
                 temp_part_index.append(this_part_new_label)
-                new_this_image[this_image_old_label == part_index] = this_part_new_label + 1
+                #print('part',this_part_new_label)
+
+                tmp_ind = np.where(this_image_old_label == part_index)
+                l = np.shape(tmp_ind)[1]
+                for ii in range(l):
+                    new_this_image[tmp_ind[0][ii]][tmp_ind[1][ii]] = this_part_new_label + 1
+                print('this_part',this_part_new_label+1)
             new_image_label_list.append(new_this_image)
-            print(temp_part_index)
+        #print('$',type(new_image_label_list[0][0][0]) )
 
         for image_index in range(data_num):
             final_im = new_image_label_list[image_index]
             draw_image = np.zeros([w, h, 3])
-            max_color = int(final_im.max())
+            #max_color = int(final_im.max())
+            myrand = [np.random.randint(0, i+1) for i in range(10)]
             for i in range(w):
+                if i%10==0:
+                    myrand = [ np.random.randint(0,i+1) for i in range(10)]
                 for j in range(h):
-                    c = final_im
-                    t = np.random.choice(c)
+                    c = final_im[i][j]
+                    if type(c)!=np.ndarray:
+                        continue
+                    #print('c',c)
+                    if(np.size(c) >1):
+                        print('c>1:',c)
+                    t = myrand[np.size(c[0])-1]
+                    t = np.random.choice(c[0][t])
+                    #print(t)
                     draw_image[i][j] = colors_set[t][0:3] * 255
             draw_image = draw_image.astype(np.uint8)
             cv2.imwrite('%s/%s.png' % (save_path, str(image_index)), draw_image)
