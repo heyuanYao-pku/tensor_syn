@@ -1,4 +1,7 @@
 import numpy as np
+import sys
+import matplotlib.pyplot as plt
+import cv2
 
 class SynTensor:
     def __init__(self, n, mlist, Plist):
@@ -45,6 +48,8 @@ class SynTensor:
         self.buildC()
         print('building R')
         self.buildR()
+        self.sol = None
+        self.rounded_sol = None
 
 
 
@@ -158,7 +163,8 @@ class SynTensor:
         vec = vec[:,ind]
 
         Q = vec[:,0:self.m_bar]
-        print(np.shape(Q))
+        #print(np.shape(Q))
+        self.sol = np.transpose(Q)
         return np.transpose(Q)
 
     def dist(self, A, B):
@@ -309,6 +315,14 @@ class SynTensor:
 
     def rounded_solution(self, th=0.5, k=2, t=2, sol=None):
 
+        '''
+        :param th: 两个向量大于th算是一类
+        :param k: 允许一个universal part 对应到某个物体的k个part
+        :param t: 允许一个part对应到t个universal part
+        :param sol: degbug用的，输入一个现成的小数解他就不用自己再求一个
+        :return:
+        '''
+
         if sol is None:
             sol = self.solution()
 
@@ -356,4 +370,73 @@ class SynTensor:
                             flag[z] +=  1
 
             ans = np.hstack([ans, cur_ans])
+            self.rounded_sol = ans.copy()
         return ans
+
+    def print_rounded_sol(self,filename = ''):
+        if filename != '':
+            f = open(filename,'r')
+            sys.stdout = f
+        for i in self.rounded_sol:
+            print(i[0],end = '')
+            for j in i[1::]:
+                print(',%d'%j,end = '')
+            print()
+        sys.__stdout__ = sys.__stdout__
+
+    def read_data(self,file_name):
+        Q_index = []
+        tensor_result_file = open(file_name, 'r')
+        while True:
+            this_line = tensor_result_file.readline().strip()
+            # print(this_line)
+            if this_line == '':
+                break
+            this_line = this_line.split(',')
+
+            this_line_inQ = []
+            for i in this_line:
+                this_line_inQ.append(int(i))
+
+            Q_index.append(this_line_inQ)
+            return np.array(Q_index,np.int)
+
+    def visualize(self,data_num,data_path,save_path,sol_path='' ):
+
+        w, h = 256, 256
+
+        # 读入
+        if sol_path !='':
+            Q_index = self.read_data(sol_path)
+        else :
+            if self.rounded_sol is None:
+                sol = self.rounded_solution()
+            Q_index = self.rounded_sol
+
+        assert data_num <= self.n,'data num is bigged than the n syntensor got when it is established'
+        image_list_old = np.load(data_path)
+
+        color_num = np.size(Q_index[0])
+        cmap = plt.get_cmap('gist_ncar')
+        colors_set = cmap(np.linspace(0, 1,color_num+1))
+        image_label_index = np.zeros([data_num,color_num],np.int)
+
+        new_image_label_list = []
+        now_n = 0
+
+        for image_index in range(data_num):
+            this_image_old_label = image_list_old[image_index]
+            this_image_part_nums = int(this_image_old_label.max())
+            print(this_image_part_nums)
+            temp_part_index = []
+            new_this_image = np.zeros([w, h],np.ndarray)
+            for part_index in range(1, this_image_part_nums + 1):
+                this_part_map = Q_index[now_n]
+                now_n += 1
+                this_part_new_label = this_part_map.index(1)
+                temp_part_index.append(this_part_new_label)
+                new_this_image[this_image_old_label == part_index] = this_part_new_label + 1
+            new_image_label_list.append(new_this_image)
+            print(temp_part_index)
+
+        for image_index in range(data_num):
