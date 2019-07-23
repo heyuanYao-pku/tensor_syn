@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import cv2
-
+import os
 class SynTensor:
     def __init__(self, n, mlist, Plist):
         '''
@@ -416,6 +416,9 @@ class SynTensor:
         assert data_num <= self.n,'data num is bigged than the n syntensor got when it is established'
         image_list_old = np.load(data_path)
 
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
         color_num = np.size(Q_index[0])
         cmap = plt.get_cmap('gist_ncar')
         colors_set = cmap(np.linspace(0, 1,color_num+1))
@@ -440,3 +443,13 @@ class SynTensor:
             print(temp_part_index)
 
         for image_index in range(data_num):
+            final_im = new_image_label_list[image_index]
+            draw_image = np.zeros([w, h, 3])
+            max_color = int(final_im.max())
+            for i in range(w):
+                for j in range(h):
+                    c = final_im
+                    t = np.random.choice(c)
+                    draw_image[i][j] = colors_set[t][0:3] * 255
+            draw_image = draw_image.astype(np.uint8)
+            cv2.imwrite('%s/%s.png' % (save_path, str(image_index)), draw_image)
