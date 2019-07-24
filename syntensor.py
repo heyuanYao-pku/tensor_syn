@@ -168,7 +168,7 @@ class SynTensor:
         return np.transpose(Q)
 
     def dist(self, A, B):
-        return np.linalg.norm(A-B)
+        return np.max(np.abs(A-B) )
 
     def get_init(self):
 
@@ -399,7 +399,7 @@ class SynTensor:
                 this_line_inQ.append(int(i))
 
             Q_index.append(this_line_inQ)
-            return np.array(Q_index,np.int)
+        return np.array(Q_index,np.int)
 
     def visualize(self,data_num,data_path,save_path,sol_path='' ):
 
@@ -407,7 +407,8 @@ class SynTensor:
 
         # 读入
         if sol_path !='':
-            Q_index = self.read_data(sol_path)
+            #Q_index = self.read_data(sol_path)
+            Q_index = np.load(sol_path)
         else :
             if self.rounded_sol is None:
                 sol = self.rounded_solution()
@@ -469,10 +470,10 @@ class SynTensor:
                     if type(c)!=np.ndarray:
                         continue
                     #print('c',c)
-                    if(np.size(c) >1):
-                        print('c>1:',c)
+                    #if(np.size(c) >1):
+                        #print('c>1:',c)
                     t = myrand[np.size(c[0])-1]
-                    t = np.random.choice(c[0][t])
+                    t = c[0][t]
                     #print(t)
                     draw_image[i][j] = colors_set[t][0:3] * 255
             draw_image = draw_image.astype(np.uint8)
