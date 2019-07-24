@@ -1,38 +1,47 @@
 import syntensor
 import numpy as np
 import json
+import os
 import sys
-
+np.set_printoptions(linewidth = np.nan)
+np.set_printoptions(threshold=np.inf)
 image_nums = 156
-fname = 'new_data_start_0_end_156_all_156.json'
+current_path = 'D:\\paper\\tensor syn\\data'
+'''
+fname = 'new_data_10.json'
 sys.stdin = open(fname,'r')
 data = input()
 data = json.loads(data)
 Plist = np.array(data['P'],np.ndarray)
 
-np.set_printoptions(linewidth = np.nan)
-np.set_printoptions(threshold=np.inf)
+
 mlist = np.array(data['mlist'])
 #print(mlist)
 #print(Plist[1][0])
 
 '''
-Plist = np.zeros([156,0],np.ndarray)
+Plist = np.zeros([156,156],np.ndarray)
 mlist = None
 for i in range(1,6):
     print(i)
-    f = open("D:/paper/tensor syn/data/%d.json"%i,'r')
+    f = open(os.path.join(current_path,"%d.json"%i) ,'r')
     j = json.load(f)
     loaded = 0
     if mlist is None:
         mlist = np.array(j['mlist'])
-        Plist = np.array(j['P'][loaded:len(mlist)], np.ndarray)
+
     else :
         loaded = len(mlist)
         mlist = np.hstack([mlist,np.array( j['mlist'] )] )
-        Plist = np.vstack( [Plist,np.array( j['P'][loaded:len(mlist)] ,np.ndarray)] )
+    l = np.size(mlist)
+    for q in range(loaded,l):
+        for t in range(loaded,156):
+            if type(j['P'][q][t]) == int:
+                print(i,q,t)
+            Plist[q][t] = j['P'][q][t]
+            Plist[t][q] = j['P'][t][q]
 
-'''
+
 n = len(mlist)
 
 PPP = np.zeros([n,n],np.ndarray)
@@ -44,14 +53,17 @@ Plist = PPP
 tensor = syntensor.SynTensor(n,mlist,Plist)
 
 print('object building finished')
-#sol = tensor.solution()
-#sol =
-k = tensor.rounded_solution(0.5,2,3 )
+
+Q = tensor.solution()
+np.save(os.path.join(current_path,'156.npy'),Q,)
+k = tensor.rounded_solution(0.5,2,1,Q )
+
+
 print(np.shape(k))
 
 print(k)
 
-tensor.visualize(image_nums ,'D:\\paper\\tensor syn\\data\\image_list.npy', 'D:\\paper\\tensor syn\\tmp_%d'%image_nums)
+tensor.visualize(image_nums ,os.path.join( current_path,'image_list.npy' ), os.path.join(current_path,'tmp_%d'%image_nums) )
 #f = open('D:\\paper\\tensor syn\\res.txt','w')
 #sys.stdout = f
 #print(np.float32(sol))
