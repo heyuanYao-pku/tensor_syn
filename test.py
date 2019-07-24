@@ -5,8 +5,8 @@ import os
 import sys
 np.set_printoptions(linewidth = np.nan)
 np.set_printoptions(threshold=np.inf)
-image_nums = 95
-current_path = 'D:\\paper\\tensor syn\\wolfdata'
+image_nums = 156
+current_path = 'temp'
 '''
 fname = 'new_data_10.json'
 sys.stdin = open(fname,'r')
@@ -18,11 +18,11 @@ Plist = np.array(data['P'],np.ndarray)
 mlist = np.array(data['mlist'])
 #print(mlist)
 #print(Plist[1][0])
-'''
 
-Plist = np.zeros([image_nums,image_nums],np.ndarray)
+'''
+Plist = np.zeros([156,156],np.ndarray)
 mlist = None
-for i in range(1,5):
+for i in range(1,6):
     print(i)
     f = open(os.path.join(current_path,"%d.json"%i) ,'r')
     j = json.load(f)
@@ -35,7 +35,7 @@ for i in range(1,5):
         mlist = np.hstack([mlist,np.array( j['mlist'] )] )
     l = np.size(mlist)
     for q in range(loaded,l):
-        for t in range(loaded,image_nums):
+        for t in range(loaded,156):
             if type(j['P'][q][t]) == int:
                 print(i,q,t)
             Plist[q][t] = j['P'][q][t]
