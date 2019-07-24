@@ -478,4 +478,4 @@ class SynTensor:
                     #print(t)
                     draw_image[i][j] = colors_set[t][0:3] * 255
             draw_image = draw_image.astype(np.uint8)
-            cv2.imwrite('%s/%4d.png' % (save_path, image_index), draw_image)
+            cv2.imwrite('%s/%04d.png' % (save_path, image_index+start_num), draw_image)
