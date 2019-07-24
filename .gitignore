@@ -10,6 +10,7 @@ __pycache__/
 *.so
 # dataset and other temp data
 temp/*
+self_test.py
 # Distribution / packaging
 
 .Python
