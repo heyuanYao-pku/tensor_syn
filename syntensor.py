@@ -402,7 +402,7 @@ class SynTensor:
             Q_index.append(this_line_inQ)
         return np.array(Q_index,np.int)
 
-    def visualize(self,data_num,data_path,save_path,sol_path='' ):
+    def visualize(self,data_num,data_path,save_path,start_num = 0, sol_path='' ):
 
         w, h = 256, 256
 
@@ -478,4 +478,4 @@ class SynTensor:
                     #print(t)
                     draw_image[i][j] = colors_set[t][0:3] * 255
             draw_image = draw_image.astype(np.uint8)
-            cv2.imwrite('%s/%s.png' % (save_path, str(image_index)), draw_image)
+            cv2.imwrite('%s/%4d.png' % (save_path, image_index), draw_image)
