@@ -6,7 +6,7 @@ import sys
 np.set_printoptions(linewidth = np.nan)
 np.set_printoptions(threshold=np.inf)
 image_nums = 156
-current_path = 'D:\\paper\\tensor syn\\data'
+current_path = 'temp'
 '''
 fname = 'new_data_10.json'
 sys.stdin = open(fname,'r')
