@@ -58,8 +58,9 @@ class SynTensor:
         n = self.n
         for i in range(n):
             for j in range(i,n):
-                k = np.random.randint(0, 2)
-                if k==0:
+
+                k = ( sum(sum(self.Plist[i][j])) >= sum(sum(self.Plist[j][i])))
+                if k==True:
                     self.P[self.indBegin[j]:self.indEnd[j],self.indBegin[i]:self.indEnd[i]] = self.Plist[i][j]
                     self.P[self.indBegin[i]:self.indEnd[i], self.indBegin[j]:self.indEnd[j]] = np.transpose( self.Plist[i][j] )
                 else:
